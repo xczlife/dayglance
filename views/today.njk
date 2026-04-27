@@ -13,7 +13,12 @@
         {# ── Left: week navigation ── #}
         {% if week_days %}
         <nav class="week-nav" aria-label="本周导航">
-          <a class="week-jump" href="{{ prev_week_url }}" aria-label="上一周">&lt;&lt;</a>
+          <a class="week-jump" href="{{ prev_week_url }}" aria-label="上一周">
+            <svg width="11" height="12" viewBox="0 0 11 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 1L1 6L6 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10 1L5 6L10 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
           <a class="nav-arrow" href="{{ prev_url }}" aria-label="前一天">
             <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 1L1 6L6 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
@@ -25,7 +30,12 @@
           <a class="nav-arrow" href="{{ next_url }}" aria-label="后一天">
             <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
-          <a class="week-jump" href="{{ next_week_url }}" aria-label="下一周">&gt;&gt;</a>
+          <a class="week-jump" href="{{ next_week_url }}" aria-label="下一周">
+            <svg width="11" height="12" viewBox="0 0 11 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5 1L10 6L5 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
         </nav>
         {% else %}
         <nav class="week-nav fallback" aria-label="日期导航">
