@@ -96,6 +96,7 @@ function weekDays(targetDay, token, cal, calendarIds) {
 app.register(fastifyStatic, {
   root: path.join(PROJECT_ROOT, "public"),
   prefix: "/static/",
+  maxAge: "1d",
 });
 
 app.register(fastifyView, {
@@ -141,11 +142,16 @@ async function renderToday(request, reply) {
   if (request.query.refresh === "1" || request.query.refresh === true) {
     await store.refresh();
     await weather.refresh();
+    reply.header("Cache-Control", "no-cache, no-store, must-revalidate");
     return reply.redirect(widgetUrl({ token, day: targetDay.toISODate(), cal }), 303);
   }
 
   const payload = store.payloadForDay(targetDay.toISODate(), calendarIds);
   const { weather: weatherText, forecast } = weather.current();
+
+  // Allow the browser/Obsidian iframe to cache the HTML for 60 seconds
+  // This makes switching back and forth between notes feel completely instant
+  reply.header("Cache-Control", "public, max-age=60");
 
   return reply.view("today.njk", {
     ...payload,
