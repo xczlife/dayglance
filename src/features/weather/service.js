@@ -31,6 +31,7 @@ export class WeatherService {
     this.cacheFile = path.join(settings.cacheDir, "..", "weather.json");
     this.weatherCache = new Map();
     this.forecastCache = new Map();
+    this._refreshPromise = null;
   }
 
   async load() {
@@ -48,7 +49,7 @@ export class WeatherService {
     await writeJsonAtomic(this.cacheFile, payload);
   }
 
-  async current() {
+  current() {
     if (this.settings.weatherProvider !== "amap") {
       return { weather: null, forecast: null };
     }
@@ -57,10 +58,11 @@ export class WeatherService {
       return { weather: null, forecast: null };
     }
 
-    const [weather, forecast] = await Promise.all([
-      this.fetchWeather(this.settings.weatherLocation, this.settings.weatherApiKey),
-      this.fetchForecast(this.settings.weatherLocation, this.settings.weatherApiKey),
-    ]);
+    const cacheKeyWeather = `amap:${this.settings.weatherLocation}`;
+    const cacheKeyForecast = `amap_fc:${this.settings.weatherLocation}`;
+
+    const weather = this.weatherCache.get(cacheKeyWeather)?.text || null;
+    const forecast = this.forecastCache.get(cacheKeyForecast)?.data || null;
 
     let text = weather;
     if (forecast?.length) {
@@ -69,6 +71,20 @@ export class WeatherService {
       text = `${emoji} ${today.night_temp}°-${today.day_temp}°`;
     }
     return { weather: text, forecast };
+  }
+
+  async refresh() {
+    if (this.settings.weatherProvider !== "amap") return;
+    if (!this.settings.weatherApiKey || !this.settings.weatherLocation) return;
+
+    if (this._refreshPromise) return this._refreshPromise;
+    this._refreshPromise = Promise.all([
+      this.fetchWeather(this.settings.weatherLocation, this.settings.weatherApiKey),
+      this.fetchForecast(this.settings.weatherLocation, this.settings.weatherApiKey),
+    ]).catch(() => {}).finally(() => {
+      this._refreshPromise = null;
+    });
+    return this._refreshPromise;
   }
 
   async fetchWeather(location, apiKey) {

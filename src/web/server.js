@@ -64,7 +64,10 @@ function startBackgroundRefresh() {
   if (firstRefreshStarted) return;
   firstRefreshStarted = true;
   store.refresh().catch((error) => {
-    console.error("Initial refresh failed:", error?.message || error);
+    console.error("Initial store refresh failed:", error?.message || error);
+  });
+  weather.refresh().catch((error) => {
+    console.error("Initial weather refresh failed:", error?.message || error);
   });
 }
 
@@ -117,6 +120,7 @@ app.get("/healthz", async (_, reply) => {
 
 app.get("/refresh", async (request) => {
   checkToken(request.query.token);
+  await weather.refresh();
   return store.refresh();
 });
 
@@ -136,11 +140,12 @@ async function renderToday(request, reply) {
 
   if (request.query.refresh === "1" || request.query.refresh === true) {
     await store.refresh();
+    await weather.refresh();
     return reply.redirect(widgetUrl({ token, day: targetDay.toISODate(), cal }), 303);
   }
 
   const payload = store.payloadForDay(targetDay.toISODate(), calendarIds);
-  const { weather: weatherText, forecast } = await weather.current();
+  const { weather: weatherText, forecast } = weather.current();
 
   return reply.view("today.njk", {
     ...payload,
@@ -174,4 +179,5 @@ startupReport();
 startBackgroundRefresh();
 setInterval(() => {
   store.refresh().catch(() => {});
+  weather.refresh().catch(() => {});
 }, settings.refreshIntervalSeconds * 1000).unref();
