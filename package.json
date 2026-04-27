@@ -1,0 +1,30 @@
+{
+  "name": "dayglance",
+  "version": "0.1.0",
+  "description": "A beautiful and minimalist calendar widget designed for Obsidian.",
+  "author": "小橙子🍊",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xczlife/dayglance.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node --watch src/web/server.js",
+    "start": "node src/web/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@fastify/static": "^8.0.3",
+    "@fastify/view": "^10.0.1",
+    "fastify": "^5.0.0",
+    "js-yaml": "^4.1.1",
+    "luxon": "^3.5.0",
+    "node-ical": "^0.20.1",
+    "nunjucks": "^3.2.4",
+    "rrule": "^2.8.1"
+  }
+}

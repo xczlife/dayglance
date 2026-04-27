@@ -1,0 +1,12 @@
+# Secrets & Configs
+.env
+config.yml
+
+# Dependencies
+node_modules/
+
+# Runtime data
+storage/
+
+# System
+.DS_Store

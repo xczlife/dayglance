@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Today - Calendar Widget</title>
+    <link rel="stylesheet" href="/static/widget.css?v=25" />
+  </head>
+  <body>
+    <main class="widget">
+      <header class="widget-header">
+
+        {# ── Left: week navigation ── #}
+        {% if week_days %}
+        <nav class="week-nav" aria-label="本周导航">
+          <a class="week-jump" href="{{ prev_week_url }}" aria-label="上一周">&lt;&lt;</a>
+          <a class="nav-arrow" href="{{ prev_url }}" aria-label="前一天">
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 1L1 6L6 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <div class="days-row">
+            {% for d in week_days %}
+              <a href="{{ d.url }}" class="day-num {% if d.is_active %}active{% endif %} {% if d.is_today %}today{% endif %} {% if d.has_events %}has-events{% endif %}">{{ d.label }}</a>
+            {% endfor %}
+          </div>
+          <a class="nav-arrow" href="{{ next_url }}" aria-label="后一天">
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="week-jump" href="{{ next_week_url }}" aria-label="下一周">&gt;&gt;</a>
+        </nav>
+        {% else %}
+        <nav class="week-nav fallback" aria-label="日期导航">
+          <a class="nav-arrow" href="{{ prev_url }}" aria-label="前一天">
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 1L1 6L6 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <span class="day-num active">{{ date_label }}</span>
+          <a class="nav-arrow" href="{{ next_url }}" aria-label="后一天">
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </nav>
+        {% endif %}
+
+        {# ── Right: weather badge + refresh ── #}
+        <div class="actions">
+          {% if weather %}
+          <div class="weather-wrap">
+            <button class="weather-badge" aria-label="天气预报">{{ weather }}</button>
+            {% if weather_forecast %}
+            <div class="weather-popup forecast-grid">
+              {% for day in weather_forecast %}
+              <div class="forecast-card">
+                <div class="fc-head">
+                  <span class="fc-label">{{ day.label }}</span>
+                  <span class="fc-icon">{{ day.day_emoji }}</span>
+                </div>
+                <span class="fc-temps">{{ day.night_temp }}° – {{ day.day_temp }}°</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+          <a href="{{ refresh_url }}" class="btn-action btn-refresh" aria-label="刷新日历" title="刷新日历">↻</a>
+        </div>
+
+      </header>
+
+      {% if stale_minutes and stale_minutes > 10 %}
+      <div class="notice" aria-live="polite">
+        <span>同步延迟 {{ stale_minutes }} 分钟</span>
+      </div>
+      {% endif %}
+
+      <div class="widget-body">
+        {% if events %}
+          <ul class="schedule">
+            {% for event in events %}
+            {% set tooltip %}日历: {{ event.source or '未知' }}{% if event.location %}
+地点: {{ event.location }}{% endif %}{% if event.description %}
+备注: {{ event.description }}{% endif %}{% endset %}
+            <li class="row {% if event.status == 'past' %}row-past{% endif %} {% if event.status == 'now' %}row-now{% endif %}"
+                {% if event.source_color %}style="--event-color: {{ event.source_color }};"{% endif %}
+                title="{{ tooltip }}">
+              <div class="event-accent"></div>
+              <div class="time-block">
+                {% if event.status == 'now' %}<span class="now-dot"></span>{% endif %}
+                <span class="time-text">{% if event.all_day %}全天{% else %}{{ event.start_label }}{% if event.end_label %} - {{ event.end_label }}{% endif %}{% endif %}</span>
+              </div>
+              <div class="summary">
+                <strong class="event-title">{{ event.title }}</strong>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty">太棒了！这天没有安排。</div>
+        {% endif %}
+      </div>
+    </main>
+
+    {% if refresh_interval_seconds %}
+    <script>
+      setTimeout(() => { window.location.reload(); }, {{ refresh_interval_seconds }} * 1000);
+    </script>
+    {% endif %}
+
+    <script>
+      // Height sync
+      function syncHeight() {
+        const h = document.documentElement.scrollHeight;
+        try { if (window.frameElement) { window.frameElement.style.height = h + 'px'; } } catch(e) {}
+        try { window.parent.postMessage({ type: 'calendar-widget-resize', height: h }, '*'); } catch(e) {}
+      }
+      window.addEventListener('load', syncHeight);
+      const ro = new ResizeObserver(syncHeight);
+      ro.observe(document.body);
+
+      // Weather popup CSS toggle
+      (function() {
+        const wrap = document.querySelector('.weather-wrap');
+        if (!wrap) return;
+
+        wrap.addEventListener('mouseenter', function() {
+          wrap.classList.add('popup-open');
+        });
+
+        wrap.addEventListener('mouseleave', function() {
+          wrap.classList.remove('popup-open');
+        });
+      })();
+    </script>
+  </body>
+</html>

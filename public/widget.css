@@ -1,0 +1,376 @@
+/* ============================================
+   Calendar Today Widget — v23
+   Design system: ghost buttons, dark active chip,
+   layered grays, popup overflow handled by JS.
+   ============================================ */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  color: #111111 !important;
+  background: transparent;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ── Card ─────────────────────────────────── */
+.widget {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border-radius: 12px;
+  padding: 14px 18px 16px;
+}
+
+/* ── Header: nav (left) + actions (right) ── */
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+/* ── Week navigation ─────────────────────── */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.days-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.week-jump {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 32px;
+  padding: 0 4px;
+  border-radius: 8px;
+  color: #666666 !important;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  user-select: none;
+}
+
+.week-jump:hover {
+  background: rgba(0,0,0,0.05);
+  color: #111111 !important;
+}
+
+/* Arrow: same footprint as day chips */
+.nav-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  color: #aaaaaa !important;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.nav-arrow:hover {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #333333 !important;
+}
+
+/* Day chip: 30×30 circle */
+.day-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1;
+  color: #333333 !important;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.day-num:hover { background: rgba(0,0,0,0.05); }
+
+/* Selected day: subtle gray highlight */
+.day-num.active {
+  background: #f3f4f6;
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #111111 !important;
+  font-weight: 700;
+}
+
+/* Today selected: solid blue */
+.day-num.today.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* Today NOT selected: same footprint, lighter blue hint */
+.day-num.today:not(.active) {
+  color: #2563eb !important;
+  font-weight: 600;
+  border-color: rgba(37, 99, 235, 0.26);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+/* Indicator dot */
+.day-num::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.day-num.has-events::after { opacity: 1; background: #cccccc; }
+.day-num.active::after     { background: rgba(255,255,255,0.55) !important; }
+.day-num.today::after      { opacity: 1; background: #2563eb; }
+.day-num.today.active::after { background: rgba(255,255,255,0.6) !important; }
+
+/* ── Action area (right) ─────────────────── */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  position: relative;         /* anchor for popup */
+}
+
+/* Ghost button — shared by weather badge and refresh */
+.weather-badge,
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: transparent;
+  color: #555555 !important;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+  text-decoration: none;
+}
+
+.weather-badge:hover,
+.btn-action:hover {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.20);
+  color: #111111 !important;
+}
+
+.btn-refresh {
+  font-size: 15px;
+  padding: 0 8px;
+}
+
+/* ── Weather popup ───────────────────────── */
+.weather-wrap {
+  position: relative;
+}
+
+.weather-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-5px) scale(0.98);
+  transform-origin: top right;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 500;
+  min-width: 165px;
+}
+
+.weather-wrap:hover .weather-popup,
+.weather-wrap.popup-open .weather-popup {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+/* ── Forecast 1x4 Strip (Ultra-compact to prevent clipping) ── */
+.weather-popup.forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 8px;
+  min-width: 270px;
+}
+
+.forecast-card {
+  background: rgba(0,0,0,0.02);
+  border: 1px solid rgba(0,0,0,0.03);
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.12s ease;
+}
+.forecast-card:hover {
+  background: rgba(0,0,0,0.04);
+}
+
+.fc-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.fc-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #555555 !important;
+}
+.fc-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+.fc-temps {
+  font-size: 10.5px;
+  color: #777777 !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+
+/* ── Schedule list ───────────────────────── */
+.widget-body { padding: 0; }
+
+.schedule {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-radius: 6px;
+  position: relative;
+  transition: background-color 0.12s ease;
+}
+
+.row:hover {
+  background: rgba(0,0,0,0.025);
+  margin: 0 -6px;
+  padding: 8px 6px;
+}
+
+.row + .row { border-top: 1px solid rgba(0,0,0,0.05); }
+.row-past   { opacity: 0.38; }
+.row-now    { background: #eff6ff !important; margin: 0 -6px; padding: 8px 6px !important; }
+.row-now + .row { border-top-color: transparent; }
+
+/* Left accent stripe */
+.event-accent {
+  flex: 0 0 3px;
+  align-self: stretch;
+  min-height: 16px;
+  border-radius: 2px;
+  background: var(--event-color, #94a3b8);
+  opacity: 0.75;
+  margin-right: 10px;
+}
+
+.now-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+  margin-right: 5px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.time-block {
+  flex: 0 0 108px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #666666 !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-right: 14px;
+}
+
+.summary { flex: 1; min-width: 0; }
+
+.event-title {
+  display: block;
+  color: #111111 !important;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Empty state ─────────────────────────── */
+.empty {
+  color: #aaaaaa !important;
+  font-size: 14px;
+  padding: 20px 0;
+  text-align: center;
+}
+
+/* ── Stale-sync notice ───────────────────── */
+.notice { margin: 0 0 12px; }
+.notice span {
+  display: inline-block;
+  border-radius: 6px;
+  background: #fff0f0;
+  color: #cc2222 !important;
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+/* ── Responsive ──────────────────────────── */
+@media (max-width: 460px) {
+  .widget { padding: 12px 12px 14px; }
+  .widget-header { flex-wrap: wrap; gap: 8px; }
+  .week-nav { flex: 1; }
+  .week-jump { min-width: 24px; }
+  .time-block { flex: 0 0 84px; padding-right: 10px; }
+}
