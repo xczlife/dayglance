@@ -55,7 +55,7 @@ a { color: inherit; text-decoration: none; }
   height: 32px;
   padding: 0 4px;
   border-radius: 8px;
-  color: #666666 !important;
+  color: #aaaaaa !important;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
@@ -65,7 +65,7 @@ a { color: inherit; text-decoration: none; }
 
 .week-jump:hover {
   background: rgba(0,0,0,0.05);
-  color: #111111 !important;
+  color: #333333 !important;
 }
 
 /* Arrow: same footprint as day chips */
@@ -167,8 +167,8 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 26px;
-  padding: 0 9px;
+  height: 28px;
+  padding: 0 10px;
   border-radius: 6px;
   border: 1px solid rgba(0,0,0,0.12);
   background: transparent;
