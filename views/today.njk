@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Today - Calendar Widget</title>
-    <link rel="stylesheet" href="/static/widget.css?v=25" />
+    <link rel="stylesheet" href="/static/widget.css?v=26" />
   </head>
   <body>
     <main class="widget">
@@ -130,17 +130,49 @@
       const ro = new ResizeObserver(syncHeight);
       ro.observe(document.body);
 
-      // Weather popup CSS toggle
+      // Weather popup — viewport-aware positioning (works in iframe/mobile)
       (function() {
-        const wrap = document.querySelector('.weather-wrap');
-        if (!wrap) return;
+        const wrap   = document.querySelector('.weather-wrap');
+        const badge  = wrap && wrap.querySelector('.weather-badge');
+        const popup  = wrap && wrap.querySelector('.weather-popup');
+        if (!wrap || !badge || !popup) return;
 
-        wrap.addEventListener('mouseenter', function() {
+        function positionPopup() {
+          const r = badge.getBoundingClientRect();
+          const popupW = popup.offsetWidth || 270;
+          // Align right edge of popup with right edge of badge
+          let left = r.right - popupW;
+          // Clamp so it never goes off the left edge of the viewport
+          if (left < 8) left = 8;
+          popup.style.top  = (r.bottom + 8) + 'px';
+          popup.style.left = left + 'px';
+          popup.style.right = 'auto';
+        }
+
+        function open() {
+          positionPopup();
           wrap.classList.add('popup-open');
-        });
-
-        wrap.addEventListener('mouseleave', function() {
+        }
+        function close() {
           wrap.classList.remove('popup-open');
+        }
+
+        // Desktop: hover
+        wrap.addEventListener('mouseenter', open);
+        wrap.addEventListener('mouseleave', close);
+
+        // Mobile / touch: tap toggle
+        badge.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (wrap.classList.contains('popup-open')) {
+            close();
+          } else {
+            open();
+          }
+        });
+        // Tap anywhere else to close
+        document.addEventListener('click', function(e) {
+          if (!wrap.contains(e.target)) close();
         });
       })();
     </script>

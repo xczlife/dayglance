@@ -1,7 +1,7 @@
 /* ============================================
-   Calendar Today Widget — v23
+   Calendar Today Widget — v26
    Design system: ghost buttons, dark active chip,
-   layered grays, popup overflow handled by JS.
+   layered grays, popup via JS-computed fixed position.
    ============================================ */
 
 * { box-sizing: border-box; }
@@ -32,7 +32,9 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 14px;
+  overflow: hidden;   /* prevent children from blowing out card width */
 }
 
 /* ── Week navigation ─────────────────────── */
@@ -40,6 +42,9 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 4px;
+  flex: 1 1 0;          /* grow but also allow shrinking */
+  min-width: 0;         /* allow flex child to shrink below its content width */
+  overflow: hidden;     /* clip if truly too narrow */
 }
 
 .days-row {
@@ -157,8 +162,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
-  position: relative;         /* anchor for popup */
+  flex-shrink: 0;            /* never squish the action buttons */
 }
 
 /* Ghost button — shared by weather badge and refresh */
@@ -197,13 +201,12 @@ a { color: inherit; text-decoration: none; }
 
 /* ── Weather popup ───────────────────────── */
 .weather-wrap {
-  position: relative;
+  position: static;   /* popup will use JS-computed fixed position instead */
 }
 
 .weather-popup {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;    /* break out of any clipping ancestor / iframe scroll */
+  /* top / left set dynamically by JS */
   background: #ffffff;
   border: 1px solid rgba(0,0,0,0.09);
   border-radius: 10px;
@@ -214,11 +217,10 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(-5px) scale(0.98);
   transform-origin: top right;
   transition: opacity 0.16s ease, transform 0.16s ease;
-  z-index: 500;
+  z-index: 9999;
   min-width: 165px;
 }
 
-.weather-wrap:hover .weather-popup,
 .weather-wrap.popup-open .weather-popup {
   opacity: 1;
   pointer-events: auto;
@@ -369,8 +371,18 @@ a { color: inherit; text-decoration: none; }
 /* ── Responsive ──────────────────────────── */
 @media (max-width: 460px) {
   .widget { padding: 12px 12px 14px; }
-  .widget-header { flex-wrap: wrap; gap: 8px; }
-  .week-nav { flex: 1; }
-  .week-jump { min-width: 24px; }
+  /* Keep header on ONE row — actions always stay right */
+  .widget-header { flex-wrap: nowrap; }
+  /* Week-jump (fast-skip) arrows hidden on very narrow screens */
+  .week-jump { display: none; }
+  /* Shrink day chips slightly so 7 fit without clipping */
+  .day-num  { width: 28px; height: 28px; font-size: 12px; }
+  .nav-arrow { width: 28px; height: 28px; }
+  /* Time column narrower on small screens */
   .time-block { flex: 0 0 84px; padding-right: 10px; }
+}
+
+@media (max-width: 360px) {
+  /* Extreme narrow: hide individual day numbers, keep prev/next arrows */
+  .days-row { display: none; }
 }
