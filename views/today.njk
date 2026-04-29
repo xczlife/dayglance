@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Today - Calendar Widget</title>
-    <link rel="stylesheet" href="/static/widget.css?v=26" />
+    <link rel="stylesheet" href="/static/widget.css?v=27" />
   </head>
   <body>
     <main class="widget">
@@ -130,6 +130,45 @@
       const ro = new ResizeObserver(syncHeight);
       ro.observe(document.body);
 
+      // Week-nav collapse: hide non-active chips when they overflow.
+      // JS-based so it works regardless of iframe width or media-query breakpoints.
+      // The active chip (.active) is ALWAYS kept visible.
+      function adaptWeekNav() {
+        const nav     = document.querySelector('.week-nav');
+        const daysRow = nav && nav.querySelector('.days-row');
+        if (!nav || !daysRow) return;
+
+        const chips = Array.from(daysRow.querySelectorAll('.day-num'));
+        const active = chips.find(c => c.classList.contains('active'));
+
+        // Step 1: Show ALL chips with explicit inline style (overrides any CSS)
+        chips.forEach(c => c.style.setProperty('display', 'inline-flex', 'important'));
+
+        // Step 2: Force layout so scrollWidth is accurate
+        void daysRow.offsetWidth;
+
+        // Step 3: Check real overflow (nav width minus ~68px for the two arrow buttons)
+        const overflowing = daysRow.scrollWidth > (nav.clientWidth - 68);
+
+        if (overflowing) {
+          // Hide non-active chips
+          chips.forEach(c => {
+            if (!c.classList.contains('active')) {
+              c.style.setProperty('display', 'none', 'important');
+            }
+          });
+        }
+
+        // Always guarantee active chip is visible
+        if (active) active.style.setProperty('display', 'inline-flex', 'important');
+      }
+      window.addEventListener('load', adaptWeekNav);
+      window.addEventListener('resize', adaptWeekNav);
+      // Also run via ResizeObserver for iframe resize
+      const navRo = new ResizeObserver(adaptWeekNav);
+      const navEl = document.querySelector('.week-nav');
+      if (navEl) navRo.observe(navEl);
+
       // Weather popup — viewport-aware positioning (works in iframe/mobile)
       (function() {
         const wrap   = document.querySelector('.weather-wrap');
@@ -138,14 +177,43 @@
         if (!wrap || !badge || !popup) return;
 
         function positionPopup() {
-          const r = badge.getBoundingClientRect();
-          const popupW = popup.offsetWidth || 270;
-          // Align right edge of popup with right edge of badge
+          const r   = badge.getBoundingClientRect();
+          const vw  = window.innerWidth  || document.documentElement.clientWidth;
+          const vh  = window.innerHeight || document.documentElement.clientHeight;
+          const GAP = 8;
+
+          // The 4-column popup has min-width: 270px (from CSS).
+          // Use this KNOWN value — don't measure a hidden element (offsetWidth is unreliable when opacity:0).
+          const FOUR_COL_W = 270;
+
+          // Only go compact if the 4-column popup would overflow the LEFT edge when right-aligned to badge.
+          const needsCompact = (r.right - FOUR_COL_W) < GAP;
+          popup.classList.toggle('compact', needsCompact);
+
+          // Now measure actual rendered width (compact = ~160px, full = ~270px+)
+          void popup.offsetWidth;
+          const popupW = needsCompact ? 160 : FOUR_COL_W;
+          const popupH = popup.offsetHeight || (needsCompact ? 150 : 100);
+
+          // Horizontal: right-align with badge, clamped inside viewport
           let left = r.right - popupW;
-          // Clamp so it never goes off the left edge of the viewport
-          if (left < 8) left = 8;
-          popup.style.top  = (r.bottom + 8) + 'px';
-          popup.style.left = left + 'px';
+          if (left < GAP) left = GAP;
+          if (left + popupW > vw - GAP) left = vw - popupW - GAP;
+
+          // Vertical: prefer whichever direction has more space
+          const spaceBelow = vh - r.bottom - GAP;
+          const spaceAbove = r.top - GAP;
+          let top;
+          if (spaceBelow >= popupH || spaceBelow >= spaceAbove) {
+            top = r.bottom + GAP;
+            popup.style.transformOrigin = 'top right';
+          } else {
+            top = Math.max(GAP, r.top - GAP - popupH);
+            popup.style.transformOrigin = 'bottom right';
+          }
+
+          popup.style.top   = top + 'px';
+          popup.style.left  = left + 'px';
           popup.style.right = 'auto';
         }
 
