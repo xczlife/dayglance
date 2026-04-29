@@ -121,7 +121,8 @@
     <script>
       // Height sync
       function syncHeight() {
-        const h = document.documentElement.scrollHeight;
+        const widget = document.querySelector('.widget');
+        const h = widget ? widget.offsetHeight + 16 : document.documentElement.scrollHeight;
         try { if (window.frameElement) { window.frameElement.style.height = h + 'px'; } } catch(e) {}
         try { window.parent.postMessage({ type: 'calendar-widget-resize', height: h }, '*'); } catch(e) {}
       }

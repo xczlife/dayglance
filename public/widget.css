@@ -24,6 +24,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   border-radius: 12px;
   padding: 14px 18px 16px;
+  margin: 8px;
 }
 
 /* ── Header: nav (left) + actions (right) ── */
@@ -148,9 +149,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 .day-num.has-events::after { opacity: 1; background: #cccccc; }
-.day-num.active::after     { background: rgba(255,255,255,0.55) !important; }
-.day-num.today::after      { opacity: 1; background: #2563eb; }
-.day-num.today.active::after { background: rgba(255,255,255,0.6) !important; }
+.day-num.active.has-events::after { background: rgba(255,255,255,0.55) !important; }
+.day-num.today.has-events:not(.active)::after { background: #2563eb; }
 
 /* ── Action area (right) ─────────────────── */
 .actions {
